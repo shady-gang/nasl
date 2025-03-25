@@ -1,0 +1,6 @@
+enable_language(CXX)
+add_executable(test_nasl test_vec.cpp)
+#target_include_directories(test_nasl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/)
+target_link_libraries(test_nasl PRIVATE nasl)
+set_property(TARGET test_nasl PROPERTY CXX_STANDARD 20)
+add_test(NAME test_nasl COMMAND test_nasl)

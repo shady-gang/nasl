@@ -1,11 +1,9 @@
 project(nasl)
 
-include(CTest)
+add_library(nasl INTERFACE)
+target_include_directories(nasl INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/> $<INSTALL_INTERFACE:include/>)
+set_target_properties(nasl PROPERTIES PUBLIC_HEADER "include/nasl.h;include/nasl_vec.h;include/nasl_mat.h")
+install(TARGETS nasl EXPORT shady_export_set)
+install(TARGETS nasl PUBLIC_HEADER DESTINATION include)
 
-if (BUILD_TESTING)
-    enable_language(CXX)
-    add_executable(test_nasl src/test_vec.cpp)
-    target_include_directories(test_nasl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/)
-    set_property(TARGET test_nasl PROPERTY CXX_STANDARD 20)
-    add_test(NAME test_nasl COMMAND test_nasl)
-endif ()
+add_subdirectory(test)
