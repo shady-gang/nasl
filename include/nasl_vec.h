@@ -1,3 +1,6 @@
+#ifndef NASL_VEC
+#define NASL_VEC
+
 #if defined(__cplusplus) & !defined(NASL_CPP_NO_NAMESPACE)
 namespace nasl {
 #endif
@@ -253,19 +256,111 @@ struct vec_impl {
 
     static_assert(sizeof(T) * len == sizeof(arr));
 };
+#endif
 
+#ifdef NASL_ENABLE_WRAPPER_CLASSES
 typedef vec_impl<float, 4> vec4;
 typedef vec_impl<unsigned, 4> uvec4;
 typedef vec_impl<int, 4> ivec4;
-
 typedef vec_impl<float, 3> vec3;
 typedef vec_impl<unsigned, 3> uvec3;
 typedef vec_impl<int, 3> ivec3;
-
 typedef vec_impl<float, 2> vec2;
 typedef vec_impl<unsigned, 2> uvec2;
 typedef vec_impl<int, 2> ivec2;
+#else
+typedef union {
+    native_vec4 native;
+    float arr[4];
+    float x, y, z, w;
+} vec4;
+typedef union {
+    // native vec3 is padded to 4N
+    float arr[3];
+    float x, y, z;
+} vec3;
+typedef union {
+    native_vec2 native;
+    float arr[2];
+    float x, y;
+} vec2;
+typedef union {
+    native_ivec4 native;
+    int arr[4];
+    int x, y, z, w;
+} ivec4;
+typedef union {
+    // native ivec3 is padded to 4N
+    int arr[3];
+    int x, y, z;
+} ivec3;
+typedef union {
+    native_ivec2 native;
+    int arr[2];
+    int x, y;
+} ivec2;
+typedef union {
+    native_uvec4 native;
+    unsigned arr[4];
+    unsigned x, y, z, w;
+} uvec4;
+typedef union {
+    // native uvec3 is padded to 4N
+    unsigned arr[3];
+    unsigned x, y, z;
+} uvec3;
+typedef union {
+    native_uvec2 native;
+    unsigned arr[2];
+    unsigned x, y;
+} uvec2;
+#endif
 
+#define MATH_FN_QUALIFIERS static inline __attribute__ ((const))
+
+#define impl_op_ctor f
+#define impl_op_scale ((a.arr[i]) * scale)
+
+#define impl_op_binop_helper(op) impl_op_##op(a.arr[i], b.arr[i])
+#define impl_op_add(a, b) ((a) + (b))
+#define impl_op_sub(a, b) ((a) - (b))
+#define impl_op_mul(a, b) ((a) * (b))
+#define impl_op_div(a, b) ((a) / (b))
+
+#define impl_op_unop_helper(op) impl_op_##op(a.arr[i])
+#define impl_op_neg(a) (-(a))
+
+#define impl_vec_op(size, snake_name, type_name, op_name, op, ...) \
+MATH_FN_QUALIFIERS type_name snake_name##_##op_name(__VA_ARGS__) { \
+    type_name thing;                                               \
+    for (int i = 0; i < size; i++)                                 \
+      thing.arr[i] = impl_op_##op;                                 \
+    return thing;                                                  \
+}
+
+#define impl_vec_bin_op(size, sn, n, opn, op) impl_vec_op(size, sn, n, opn, binop_helper(op), n a, n b)
+#define impl_vec_un_op(size, sn, n, opn, op) impl_vec_op(size, sn, n, opn, unop_helper(op), n a)
+
+#define impl_vec_ops(size, snake_name, name, scalar_name) \
+impl_vec_bin_op(size, snake_name, name, add, add) \
+impl_vec_bin_op(size, snake_name, name, sub, sub) \
+impl_vec_bin_op(size, snake_name, name, mul, mul) \
+impl_vec_bin_op(size, snake_name, name, div, div) \
+impl_vec_un_op(size, snake_name, name, neg, neg) \
+impl_vec_op(size, snake_name, name, scale, scale, name a, scalar_name scale) \
+impl_vec_op(size, snake_name, name, ctor, ctor, scalar_name f)
+
+impl_vec_ops(2, vec2, vec2, float)
+impl_vec_ops(3, vec3, vec3, float)
+impl_vec_ops(4, vec4, vec4, float)
+impl_vec_ops(2, ivec2, ivec2, int)
+impl_vec_ops(3, ivec3, ivec3, int)
+impl_vec_ops(4, ivec4, ivec4, int)
+impl_vec_ops(2, uvec2, uvec2, unsigned)
+impl_vec_ops(3, uvec3, uvec3, unsigned)
+impl_vec_ops(4, uvec4, uvec4, unsigned)
+
+#ifdef NASL_ENABLE_WRAPPER_CLASSES
 template<unsigned len>
 float lengthSquared(vec_impl<float, len> vec) {
     float acc = 0.0f;
@@ -284,19 +379,10 @@ template<unsigned len>
 vec_impl<float, len> normalize(vec_impl<float, len> vec) {
     return vec / length(vec);
 }
-
-#else
-typedef native_vec4 vec4;
-typedef native_vec3 vec3;
-typedef native_vec2 vec2;
-typedef native_ivec4 ivec4;
-typedef native_ivec3 ivec3;
-typedef native_ivec2 ivec2;
-typedef native_uvec4 uvec4;
-typedef native_uvec3 uvec3;
-typedef native_uvec2 uvec2;
 #endif
 
 #if defined(__cplusplus) & !defined(NASL_CPP_NO_NAMESPACE)
 }
+#endif
+
 #endif

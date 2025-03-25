@@ -1,3 +1,6 @@
+#ifndef NASL_MAT
+#define NASL_MAT
+
 #if defined(__cplusplus) & !defined(NASL_CPP_NO_NAMESPACE)
 namespace nasl {
 #endif
@@ -16,7 +19,7 @@ union mat4_ {
             m20, m21, m22, m23,
             m30, m31, m32, m33;
     };
-    //vec4 rows[4];
+    vec4 rows[4];
     float arr[16];
 
 
@@ -82,7 +85,7 @@ static inline mat4 invert_mat4(mat4 m) {
     return r;
 }
 
-/*mat4 perspective_mat4(float a, float fov, float n, float f) {
+static inline mat4 perspective_mat4(float a, float fov, float n, float f) {
     float pi = M_PI;
     float s = 1.0f / tanf(fov * 0.5f * (pi / 180.0f));
     return (mat4) {
@@ -91,7 +94,7 @@ static inline mat4 invert_mat4(mat4 m) {
         0, 0, -f / (f - n), -1.f,
         0, 0, - (f * n) / (f - n), 0
     };
-}*/
+}
 
 static inline mat4 translate_mat4(vec3 offset) {
     mat4 m = identity_mat4;
@@ -101,7 +104,7 @@ static inline mat4 translate_mat4(vec3 offset) {
     return m;
 }
 
-/*mat4 rotate_axis_mat4(unsigned int axis, float f) {
+static inline mat4 rotate_axis_mat4(unsigned int axis, float f) {
     mat4 m = { 0 };
     m.m33 = 1;
 
@@ -117,7 +120,7 @@ static inline mat4 translate_mat4(vec3 offset) {
     m.rows[axis].arr[axis] = 1;
 
     return m;
-}*/
+}
 
 static inline mat4 mul_mat4(mat4 l, mat4 r) {
     mat4 dst = { 0 };
@@ -156,24 +159,24 @@ typedef union {
     };
     //vec4 rows[4];
     float arr[9];
-} Mat3f;
+} mat3;
 
-static const Mat3f identity_mat3f = {
+static const mat3 identity_mat3 = {
     1, 0, 0,
     0, 1, 0,
     0, 0, 1,
 };
 
-static Mat3f transpose_mat3f(Mat3f src) {
-    return (Mat3f) {
+static mat3 transpose_mat3(mat3 src) {
+    return (mat3) {
         src.m00, src.m10, src.m20,
         src.m01, src.m11, src.m21,
         src.m02, src.m12, src.m22,
     };
 }
 
-static Mat3f mul_mat3f(Mat3f l, Mat3f r) {
-    Mat3f dst = { 0 };
+static mat3 mul_mat3(mat3 l, mat3 r) {
+    mat3 dst = { 0 };
 #define a(i, j) m##i##j
 #define t(bc, br, i) l.a(i, br) * r.a(bc, i)
 #define e(bc, br) dst.a(bc, br) = t(bc, br, 0) + t(bc, br, 1) + t(bc, br, 2);
@@ -188,8 +191,8 @@ static Mat3f mul_mat3f(Mat3f l, Mat3f r) {
 #undef genmul
 }
 
-typedef Mat3f mat3;
-
 #if defined(__cplusplus) & !defined(NASL_CPP_NO_NAMESPACE)
 }
+#endif
+
 #endif
