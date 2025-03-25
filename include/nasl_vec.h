@@ -133,6 +133,14 @@ struct vec_impl {
         return n;
     }
 
+    T& operator [](int i) {
+        return arr[i];
+    }
+
+    T operator [](int i) const {
+        return arr[i];
+    }
+
     template <int dst_len, Mapping<dst_len> mapping> // requires(fits<dst_len>(len, mapping))
     struct Swizzler {
         using That = vec_impl<T, dst_len>;
