@@ -178,47 +178,62 @@ struct vec_impl {
         }
     };
 
-    This operator +(This other) {
+    This operator +(This other) const {
         This result;
         for_range<0, len>([&]<auto i>(){
             result.arr[i] = this->arr[i] + other.arr[i];
         });
         return result;
     }
-    This operator -(This other) {
+    This operator -(This other) const {
         This result;
         for_range<0, len>([&]<auto i>(){
             result.arr[i] = this->arr[i] - other.arr[i];
         });
         return result;
     }
-    This operator *(This other) {
+    This operator *(This other) const {
         This result;
         for_range<0, len>([&]<auto i>(){
             result.arr[i] = this->arr[i] * other.arr[i];
         });
         return result;
     }
-    This operator /(This other) {
+    This operator /(This other) const {
         This result;
         for_range<0, len>([&]<auto i>(){
             result.arr[i] = this->arr[i] / other.arr[i];
         });
         return result;
     }
-    This operator *(T s) {
+    This operator *(T s) const {
         This result;
         for_range<0, len>([&]<auto i>(){
             result.arr[i] = this->arr[i] * s;
         });
         return result;
     }
-    This operator /(T s) {
+
+    This operator /(T s) const {
         This result;
         for_range<0, len>([&]<auto i>(){
             result.arr[i] = this->arr[i] / s;
         });
         return result;
+    }
+
+    This cross(const This &other) const requires(len == 3) {
+        return { this->y * other.z - this->z * other.y,
+                 this->z * other.x - this->x * other.z,
+                 this->x * other.y - this->y * other.x };
+    }
+
+    T dot(const This& other) const {
+        T acc = 0;
+        for_range<0, len>([&]<auto i>(){
+            acc += this->arr[i] * other.arr[i];
+        });
+        return acc;
     }
 
 #define COMPONENT_0 x
@@ -386,6 +401,16 @@ float length(vec_impl<float, len> vec) {
 template<unsigned len>
 vec_impl<float, len> normalize(vec_impl<float, len> vec) {
     return vec / length(vec);
+}
+
+template<typename T, unsigned len>
+auto dot(const vec_impl<T, len>& vec, const vec_impl<T, len>& other) {
+    return vec.dot(other);
+}
+
+template<typename T, unsigned len>
+auto cross(const vec_impl<T, len>& vec, const vec_impl<T, len>& other) {
+    return vec.cross(other);
 }
 #endif
 
