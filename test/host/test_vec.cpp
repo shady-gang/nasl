@@ -16,12 +16,14 @@ static_assert(sizeof(uvec3) == sizeof(unsigned) * 3, "");
 static_assert(sizeof(uvec2) == sizeof(unsigned) * 2, "");
 
 void check_native_casts(const vec4& v4, const uvec4& u4, const ivec4& i4) {
+#ifndef NASL_NO_NATIVE_VEC
     native_vec4 nv4 = v4;
     native_uvec4 nu4 = u4;
     native_ivec4 ni4 = i4;
     vec4 rv4 = nv4;
     native_vec3 nv3;
     nv3 = v4.xyz;
+#endif
 }
 
 void check_vector_scalar_ctors() {
