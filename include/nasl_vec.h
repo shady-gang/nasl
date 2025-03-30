@@ -364,7 +364,12 @@ typedef union {
 } uvec2;
 #endif
 
+#ifdef __GNUC__
 #define MATH_FN_QUALIFIERS static inline __attribute__ ((const))
+#else
+#define MATH_FN_QUALIFIERS static inline
+#endif
+
 
 #define impl_op_ctor f
 #define impl_op_scale ((a.arr[i]) * scale)
