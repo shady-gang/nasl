@@ -17,8 +17,8 @@ typedef int native_ivec2      __attribute__((ext_vector_type(2)));
 typedef unsigned native_uvec4 __attribute__((ext_vector_type(4)));
 typedef unsigned native_uvec3 __attribute__((ext_vector_type(3)));
 typedef unsigned native_uvec2 __attribute__((ext_vector_type(2)));
-#else
-// gcc can't cope with this
+#elif __GNUC__
+// gcc does not support CL-style ext_vector_type
 typedef float native_vec4     __attribute__((vector_size(16)));
 typedef float native_vec3     __attribute__((vector_size(16)));
 typedef float native_vec2     __attribute__((vector_size(8)));
@@ -30,6 +30,10 @@ typedef int native_ivec2      __attribute__((vector_size(8)));
 typedef unsigned native_uvec4 __attribute__((vector_size(16)));
 typedef unsigned native_uvec3 __attribute__((vector_size(16)));
 typedef unsigned native_uvec2 __attribute__((vector_size(8)));
+#else
+// get a real compiler tbh
+#pragma message("Native vector types are unavailable.")
+#define NASL_NO_NATIVE_VEC
 #endif
 
 #if defined(__cplusplus) & !defined(NASL_CPP_NO_WRAPPER_CLASSES)
@@ -41,6 +45,7 @@ static_assert(__cplusplus >= 202002L, "C++20 is required");
 template<typename T, unsigned len>
 struct vec_native_type {};
 
+#ifndef NASL_NO_NATIVE_VEC
 template<> struct vec_native_type   <float, 4> { using Native =  native_vec4; };
 template<> struct vec_native_type     <int, 4> { using Native = native_ivec4; };
 template<> struct vec_native_type<unsigned, 4> { using Native = native_uvec4; };
@@ -53,6 +58,7 @@ template<> struct vec_native_type<unsigned, 2> { using Native = native_uvec2; };
 template<> struct vec_native_type   <float, 1> { using Native = float; };
 template<> struct vec_native_type     <int, 1> { using Native = int; };
 template<> struct vec_native_type<unsigned, 1> { using Native = unsigned; };
+#endif
 
 template<int len>
 struct Mapping {
@@ -81,7 +87,9 @@ constexpr void for_range(F f)
 template<typename T, unsigned len>
 struct vec_impl {
     using This = vec_impl<T, len>;
+#ifndef NASL_NO_NATIVE_VEC
     using Native = typename vec_native_type<T, len>::Native;
+#endif
 
     vec_impl() = default;
     vec_impl(T s) {
@@ -119,6 +127,7 @@ struct vec_impl {
         this->arr[1] = y;
     }
 
+#ifndef NASL_NO_NATIVE_VEC
     vec_impl(Native n) {
         for_range<0, len>([&]<auto i>(){
             arr[i] = n[i];
@@ -132,6 +141,7 @@ struct vec_impl {
         });
         return n;
     }
+#endif
 
     T& operator [](int i) {
         return arr[i];
@@ -144,7 +154,6 @@ struct vec_impl {
     template <int dst_len, Mapping<dst_len> mapping> // requires(fits<dst_len>(len, mapping))
     struct Swizzler {
         using That = vec_impl<T, dst_len>;
-        using ThatNative = typename vec_native_type<T, dst_len>::Native;
 
         operator That() const requires(dst_len > 1 && fits<dst_len>(len, mapping)) {
             auto src = reinterpret_cast<const This*>(this);
@@ -155,10 +164,14 @@ struct vec_impl {
             return dst;
         }
 
+#ifndef NASL_NO_NATIVE_VEC
+        using ThatNative = typename vec_native_type<T, dst_len>::Native;
+
         operator ThatNative() const requires(dst_len > 1 && fits<dst_len>(len, mapping)) {
             That that = *this;
             return that;
         }
+#endif
 
         operator T() const requires(dst_len == 1 && fits<dst_len>(len, mapping)) {
             auto src = reinterpret_cast<const This*>(this);
@@ -293,7 +306,9 @@ typedef vec_impl<unsigned, 2> uvec2;
 typedef vec_impl<int, 2> ivec2;
 #else
 typedef union {
+#ifndef NASL_NO_NATIVE_VEC
     native_vec4 native;
+#endif
     float arr[4];
     float x, y, z, w;
 } vec4;
@@ -303,12 +318,16 @@ typedef union {
     float x, y, z;
 } vec3;
 typedef union {
+#ifndef NASL_NO_NATIVE_VEC
     native_vec2 native;
+#endif
     float arr[2];
     float x, y;
 } vec2;
 typedef union {
+#ifndef NASL_NO_NATIVE_VEC
     native_ivec4 native;
+#endif
     int arr[4];
     int x, y, z, w;
 } ivec4;
@@ -318,12 +337,16 @@ typedef union {
     int x, y, z;
 } ivec3;
 typedef union {
+#ifndef NASL_NO_NATIVE_VEC
     native_ivec2 native;
+#endif
     int arr[2];
     int x, y;
 } ivec2;
 typedef union {
+#ifndef NASL_NO_NATIVE_VEC
     native_uvec4 native;
+#endif
     unsigned arr[4];
     unsigned x, y, z, w;
 } uvec4;
@@ -333,7 +356,9 @@ typedef union {
     unsigned x, y, z;
 } uvec3;
 typedef union {
+#ifndef NASL_NO_NATIVE_VEC
     native_uvec2 native;
+#endif
     unsigned arr[2];
     unsigned x, y;
 } uvec2;
