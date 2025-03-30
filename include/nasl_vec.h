@@ -41,7 +41,7 @@ typedef unsigned native_uvec2 __attribute__((vector_size(8)));
 #endif
 
 #ifdef NASL_ENABLE_WRAPPER_CLASSES
-static_assert(__cplusplus >= 202002L, "C++20 is required");
+static_assert(__cplusplus >= 202002L, "C++20 is required. If you are using MSVC you need to enable /Zc:__cplusplus");
 template<typename T, unsigned len>
 struct vec_native_type {};
 
