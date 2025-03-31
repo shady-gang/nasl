@@ -36,6 +36,10 @@ typedef unsigned native_uvec2 __attribute__((vector_size(8)));
 #define NASL_NO_NATIVE_VEC
 #endif
 
+#if __CUDACC__
+#define NASL_NO_NATIVE_VEC
+#endif
+
 #if defined(__cplusplus) & !defined(NASL_CPP_NO_WRAPPER_CLASSES)
 #define NASL_ENABLE_WRAPPER_CLASSES
 #endif
@@ -66,7 +70,7 @@ struct Mapping {
 };
 
 template<int dst_len>
-static consteval bool fits(unsigned len, Mapping<dst_len> mapping) {
+NASL_METHOD static consteval bool fits(unsigned len, Mapping<dst_len> mapping) {
     for (unsigned i = 0; i < dst_len; i++) {
         if (mapping.data[i] >= len)
             return false;
@@ -75,7 +79,7 @@ static consteval bool fits(unsigned len, Mapping<dst_len> mapping) {
 }
 
 template <auto B, auto E, typename F>
-constexpr void for_range(F f)
+NASL_METHOD constexpr void for_range(F f)
 {
     if constexpr (B < E)
     {
@@ -84,6 +88,33 @@ constexpr void for_range(F f)
     }
 }
 
+#define SWIZZLER_DATA_4(a, b, c, d) NASL_CONSTANT Mapping<4> mapping_##a##_##b##_##c##_##d { a, b, c, d };
+#define GEN_SWIZZLER_DATA_4_D(D, C, B, A) SWIZZLER_DATA_4(A, B, C, D)
+#define GEN_SWIZZLER_DATA_4_C(C, B, A) GEN_SWIZZLER_DATA_4_D(0, C, B, A) GEN_SWIZZLER_DATA_4_D(1, C, B, A) GEN_SWIZZLER_DATA_4_D(2, C, B, A) GEN_SWIZZLER_DATA_4_D(3, C, B, A)
+#define GEN_SWIZZLER_DATA_4_B(B, A) GEN_SWIZZLER_DATA_4_C(0, B, A) GEN_SWIZZLER_DATA_4_C(1, B, A) GEN_SWIZZLER_DATA_4_C(2, B, A) GEN_SWIZZLER_DATA_4_C(3, B, A)
+#define GEN_SWIZZLER_DATA_4_A(A) GEN_SWIZZLER_DATA_4_B(0, A) GEN_SWIZZLER_DATA_4_B(1, A) GEN_SWIZZLER_DATA_4_B(2, A) GEN_SWIZZLER_DATA_4_B(3, A)
+#define GEN_SWIZZLER_DATA_4() GEN_SWIZZLER_DATA_4_A(0) GEN_SWIZZLER_DATA_4_A(1) GEN_SWIZZLER_DATA_4_A(2) GEN_SWIZZLER_DATA_4_A(3)
+
+#define SWIZZLER_DATA_3(a, b, c) NASL_CONSTANT Mapping<3> mapping_##a##_##b##_##c { a, b, c };
+#define GEN_SWIZZLER_DATA_3_C(C, B, A) SWIZZLER_DATA_3(A, B, C)
+#define GEN_SWIZZLER_DATA_3_B(B, A) GEN_SWIZZLER_DATA_3_C(0, B, A) GEN_SWIZZLER_DATA_3_C(1, B, A) GEN_SWIZZLER_DATA_3_C(2, B, A) GEN_SWIZZLER_DATA_3_C(3, B, A)
+#define GEN_SWIZZLER_DATA_3_A(A) GEN_SWIZZLER_DATA_3_B(0, A) GEN_SWIZZLER_DATA_3_B(1, A) GEN_SWIZZLER_DATA_3_B(2, A) GEN_SWIZZLER_DATA_3_B(3, A)
+#define GEN_SWIZZLER_DATA_3() GEN_SWIZZLER_DATA_3_A(0) GEN_SWIZZLER_DATA_3_A(1) GEN_SWIZZLER_DATA_3_A(2) GEN_SWIZZLER_DATA_3_A(3)
+
+#define SWIZZLER_DATA_2(a, b) NASL_CONSTANT Mapping<2> mapping_##a##_##b { a, b };
+#define GEN_SWIZZLER_DATA_2_B(B, A) SWIZZLER_DATA_2(A, B)
+#define GEN_SWIZZLER_DATA_2_A(A) GEN_SWIZZLER_DATA_2_B(0, A) GEN_SWIZZLER_DATA_2_B(1, A) GEN_SWIZZLER_DATA_2_B(2, A) GEN_SWIZZLER_DATA_2_B(3, A)
+#define GEN_SWIZZLER_DATA_2() GEN_SWIZZLER_DATA_2_A(0) GEN_SWIZZLER_DATA_2_A(1) GEN_SWIZZLER_DATA_2_A(2) GEN_SWIZZLER_DATA_2_A(3)
+
+#define SWIZZLER_DATA_1(a) NASL_CONSTANT Mapping<1> mapping_##a = { a };
+#define GEN_SWIZZLER_DATA_1_A(A) SWIZZLER_DATA_1(A)
+#define GEN_SWIZZLER_DATA_1() GEN_SWIZZLER_DATA_1_A(0) GEN_SWIZZLER_DATA_1_A(1) GEN_SWIZZLER_DATA_1_A(2) GEN_SWIZZLER_DATA_1_A(3)
+
+GEN_SWIZZLER_DATA_1()
+GEN_SWIZZLER_DATA_2()
+GEN_SWIZZLER_DATA_3()
+GEN_SWIZZLER_DATA_4()
+
 template<typename T, unsigned len>
 struct vec_impl {
     using This = vec_impl<T, len>;
@@ -91,50 +122,50 @@ struct vec_impl {
     using Native = typename vec_native_type<T, len>::Native;
 #endif
 
-    vec_impl() = default;
-    vec_impl(T s) {
+    NASL_METHOD vec_impl() = default;
+    NASL_METHOD vec_impl(T s) {
         for_range<0, len>([&]<auto i>(){
             arr[i] = s;
         });
     }
 
-    vec_impl(T x, T y, T z, T w) requires (len >= 4) {
+    NASL_METHOD vec_impl(T x, T y, T z, T w) requires (len >= 4) {
         this->arr[0] = x;
         this->arr[1] = y;
         this->arr[2] = z;
         this->arr[3] = w;
     }
 
-    vec_impl(vec_impl<T, 2> xy, T z, T w) requires (len >= 4) : vec_impl(xy.x, xy.y, z, w) {}
-    vec_impl(T x, vec_impl<T, 2> yz, T w) requires (len >= 4) : vec_impl(x, yz.x, yz.y, w) {}
-    vec_impl(T x, T y, vec_impl<T, 2> zw) requires (len >= 4) : vec_impl(x, y, zw.x, zw.y) {}
-    vec_impl(vec_impl<T, 2> xy, vec_impl<T, 2> zw) requires (len >= 4) : vec_impl(xy.x, xy.y, zw.x, zw.y) {}
+    NASL_METHOD vec_impl(vec_impl<T, 2> xy, T z, T w) requires (len >= 4) : vec_impl(xy.x, xy.y, z, w) {}
+    NASL_METHOD vec_impl(T x, vec_impl<T, 2> yz, T w) requires (len >= 4) : vec_impl(x, yz.x, yz.y, w) {}
+    NASL_METHOD vec_impl(T x, T y, vec_impl<T, 2> zw) requires (len >= 4) : vec_impl(x, y, zw.x, zw.y) {}
+    NASL_METHOD vec_impl(vec_impl<T, 2> xy, vec_impl<T, 2> zw) requires (len >= 4) : vec_impl(xy.x, xy.y, zw.x, zw.y) {}
 
-    vec_impl(vec_impl<T, 3> xyz, T w) requires (len >= 4) : vec_impl(xyz.x, xyz.y, xyz.z, w) {}
-    vec_impl(T x, vec_impl<T, 3> yzw) requires (len >= 4) : vec_impl(x, yzw.x, yzw.y, yzw.z) {}
+    NASL_METHOD vec_impl(vec_impl<T, 3> xyz, T w) requires (len >= 4) : vec_impl(xyz.x, xyz.y, xyz.z, w) {}
+    NASL_METHOD vec_impl(T x, vec_impl<T, 3> yzw) requires (len >= 4) : vec_impl(x, yzw.x, yzw.y, yzw.z) {}
 
-    vec_impl(T x, T y, T z) requires (len >= 3) {
+    NASL_METHOD vec_impl(T x, T y, T z) requires (len >= 3) {
         this->arr[0] = x;
         this->arr[1] = y;
         this->arr[2] = z;
     }
 
-    vec_impl(vec_impl<T, 2> xy, T z) requires (len >= 3) : vec_impl(xy.x, xy.y, z) {}
-    vec_impl(T x, vec_impl<T, 2> yz) requires (len >= 3) : vec_impl(x, yz.x, yz.y) {}
+    NASL_METHOD vec_impl(vec_impl<T, 2> xy, T z) requires (len >= 3) : vec_impl(xy.x, xy.y, z) {}
+    NASL_METHOD vec_impl(T x, vec_impl<T, 2> yz) requires (len >= 3) : vec_impl(x, yz.x, yz.y) {}
 
-    vec_impl(T x, T y) {
+    NASL_METHOD vec_impl(T x, T y) {
         this->arr[0] = x;
         this->arr[1] = y;
     }
 
 #ifndef NASL_NO_NATIVE_VEC
-    vec_impl(Native n) {
+    NASL_METHOD vec_impl(Native n) {
         for_range<0, len>([&]<auto i>(){
             arr[i] = n[i];
         });
     }
 
-    operator Native() const {
+    NASL_METHOD operator Native() const {
         Native n;
         for_range<0, len>([&]<auto i>(){
             n[i] = arr[i];
@@ -143,19 +174,77 @@ struct vec_impl {
     }
 #endif
 
-    T& operator [](int i) {
+    NASL_METHOD T& operator [](int i) {
         return arr[i];
     }
 
-    T operator [](int i) const {
+    NASL_METHOD T operator [](int i) const {
         return arr[i];
     }
 
-    template <int dst_len, Mapping<dst_len> mapping> // requires(fits<dst_len>(len, mapping))
+    NASL_METHOD This operator +(This other) const {
+        This result;
+        for_range<0, len>([&]<auto i>(){
+            result.arr[i] = this->arr[i] + other.arr[i];
+        });
+        return result;
+    }
+    NASL_METHOD This operator -(This other) const {
+        This result;
+        for_range<0, len>([&]<auto i>(){
+            result.arr[i] = this->arr[i] - other.arr[i];
+        });
+        return result;
+    }
+    NASL_METHOD This operator *(This other) const {
+        This result;
+        for_range<0, len>([&]<auto i>(){
+            result.arr[i] = this->arr[i] * other.arr[i];
+        });
+        return result;
+    }
+    NASL_METHOD This operator /(This other) const {
+        This result;
+        for_range<0, len>([&]<auto i>(){
+            result.arr[i] = this->arr[i] / other.arr[i];
+        });
+        return result;
+    }
+    NASL_METHOD This operator *(T s) const {
+        This result;
+        for_range<0, len>([&]<auto i>(){
+            result.arr[i] = this->arr[i] * s;
+        });
+        return result;
+    }
+
+    NASL_METHOD This operator /(T s) const {
+        This result;
+        for_range<0, len>([&]<auto i>(){
+            result.arr[i] = this->arr[i] / s;
+        });
+        return result;
+    }
+
+    NASL_METHOD This cross(const This &other) const requires(len == 3) {
+        return { this->y * other.z - this->z * other.y,
+                 this->z * other.x - this->x * other.z,
+                 this->x * other.y - this->y * other.x };
+    }
+
+    NASL_METHOD T dot(const This& other) const {
+        T acc = 0;
+        for_range<0, len>([&]<auto i>(){
+            acc += this->arr[i] * other.arr[i];
+        });
+        return acc;
+    }
+
+    template <int dst_len, const Mapping<dst_len>& mapping> // requires(fits<dst_len>(len, mapping))
     struct Swizzler {
         using That = vec_impl<T, dst_len>;
 
-        operator That() const requires(dst_len > 1 && fits<dst_len>(len, mapping)) {
+        NASL_METHOD operator That() const requires(dst_len > 1 && fits<dst_len>(len, mapping)) {
             auto src = reinterpret_cast<const This*>(this);
             That dst;
             for_range<0, dst_len>([&]<auto i>(){
@@ -167,87 +256,29 @@ struct vec_impl {
 #ifndef NASL_NO_NATIVE_VEC
         using ThatNative = typename vec_native_type<T, dst_len>::Native;
 
-        operator ThatNative() const requires(dst_len > 1 && fits<dst_len>(len, mapping)) {
+        NASL_METHOD operator ThatNative() const requires(dst_len > 1 && fits<dst_len>(len, mapping)) {
             That that = *this;
             return that;
         }
 #endif
 
-        operator T() const requires(dst_len == 1 && fits<dst_len>(len, mapping)) {
+        NASL_METHOD operator T() const requires(dst_len == 1 && fits<dst_len>(len, mapping)) {
             auto src = reinterpret_cast<const This*>(this);
             return src->arr[mapping.data[0]];
         }
 
-        void operator=(const T& t) requires(dst_len == 1 && fits<dst_len>(len, mapping)) {
+        NASL_METHOD void operator=(const T& t) requires(dst_len == 1 && fits<dst_len>(len, mapping)) {
             auto src = reinterpret_cast<This*>(this);
             src->arr[mapping.data[0]] = t;
         }
 
-        void operator=(const That& src) requires(dst_len > 1 && fits<dst_len>(len, mapping)) {
+        NASL_METHOD void operator=(const That& src) requires(dst_len > 1 && fits<dst_len>(len, mapping)) {
             auto dst = reinterpret_cast<This*>(this);
             for_range<0, dst_len>([&]<auto i>(){
                 dst->arr[mapping.data[i]] = src.arr[i];
             });
         }
     };
-
-    This operator +(This other) const {
-        This result;
-        for_range<0, len>([&]<auto i>(){
-            result.arr[i] = this->arr[i] + other.arr[i];
-        });
-        return result;
-    }
-    This operator -(This other) const {
-        This result;
-        for_range<0, len>([&]<auto i>(){
-            result.arr[i] = this->arr[i] - other.arr[i];
-        });
-        return result;
-    }
-    This operator *(This other) const {
-        This result;
-        for_range<0, len>([&]<auto i>(){
-            result.arr[i] = this->arr[i] * other.arr[i];
-        });
-        return result;
-    }
-    This operator /(This other) const {
-        This result;
-        for_range<0, len>([&]<auto i>(){
-            result.arr[i] = this->arr[i] / other.arr[i];
-        });
-        return result;
-    }
-    This operator *(T s) const {
-        This result;
-        for_range<0, len>([&]<auto i>(){
-            result.arr[i] = this->arr[i] * s;
-        });
-        return result;
-    }
-
-    This operator /(T s) const {
-        This result;
-        for_range<0, len>([&]<auto i>(){
-            result.arr[i] = this->arr[i] / s;
-        });
-        return result;
-    }
-
-    This cross(const This &other) const requires(len == 3) {
-        return { this->y * other.z - this->z * other.y,
-                 this->z * other.x - this->x * other.z,
-                 this->x * other.y - this->y * other.x };
-    }
-
-    T dot(const This& other) const {
-        T acc = 0;
-        for_range<0, len>([&]<auto i>(){
-            acc += this->arr[i] * other.arr[i];
-        });
-        return acc;
-    }
 
 #define COMPONENT_0 x
 #define COMPONENT_1 y
@@ -256,7 +287,7 @@ struct vec_impl {
 
 #define CONCAT_4_(a, b, c, d) a##b##c##d
 #define CONCAT_4(a, b, c, d) CONCAT_4_(a, b, c, d)
-#define SWIZZLER_4(a, b, c, d) Swizzler<4, Mapping<4> { a, b, c, d }> CONCAT_4(COMPONENT_##a, COMPONENT_##b, COMPONENT_##c, COMPONENT_##d);
+#define SWIZZLER_4(a, b, c, d) Swizzler<4, mapping_##a##_##b##_##c##_##d> CONCAT_4(COMPONENT_##a, COMPONENT_##b, COMPONENT_##c, COMPONENT_##d);
 #define GEN_SWIZZLERS_4_D(D, C, B, A) SWIZZLER_4(A, B, C, D)
 #define GEN_SWIZZLERS_4_C(C, B, A) GEN_SWIZZLERS_4_D(0, C, B, A) GEN_SWIZZLERS_4_D(1, C, B, A) GEN_SWIZZLERS_4_D(2, C, B, A) GEN_SWIZZLERS_4_D(3, C, B, A)
 #define GEN_SWIZZLERS_4_B(B, A) GEN_SWIZZLERS_4_C(0, B, A) GEN_SWIZZLERS_4_C(1, B, A) GEN_SWIZZLERS_4_C(2, B, A) GEN_SWIZZLERS_4_C(3, B, A)
@@ -265,7 +296,7 @@ struct vec_impl {
 
 #define CONCAT_3_(a, b, c) a##b##c
 #define CONCAT_3(a, b, c) CONCAT_3_(a, b, c)
-#define SWIZZLER_3(a, b, c) Swizzler<3, Mapping<3> { a, b, c }> CONCAT_3(COMPONENT_##a, COMPONENT_##b, COMPONENT_##c);
+#define SWIZZLER_3(a, b, c) Swizzler<3, mapping_##a##_##b##_##c> CONCAT_3(COMPONENT_##a, COMPONENT_##b, COMPONENT_##c);
 #define GEN_SWIZZLERS_3_C(C, B, A) SWIZZLER_3(A, B, C)
 #define GEN_SWIZZLERS_3_B(B, A) GEN_SWIZZLERS_3_C(0, B, A) GEN_SWIZZLERS_3_C(1, B, A) GEN_SWIZZLERS_3_C(2, B, A) GEN_SWIZZLERS_3_C(3, B, A)
 #define GEN_SWIZZLERS_3_A(A) GEN_SWIZZLERS_3_B(0, A) GEN_SWIZZLERS_3_B(1, A) GEN_SWIZZLERS_3_B(2, A) GEN_SWIZZLERS_3_B(3, A)
@@ -273,12 +304,12 @@ struct vec_impl {
 
 #define CONCAT_2_(a, b) a##b
 #define CONCAT_2(a, b) CONCAT_2_(a, b)
-#define SWIZZLER_2(a, b) Swizzler<2, Mapping<2> { a, b }> CONCAT_2(COMPONENT_##a, COMPONENT_##b);
+#define SWIZZLER_2(a, b) Swizzler<2, mapping_##a##_##b> CONCAT_2(COMPONENT_##a, COMPONENT_##b);
 #define GEN_SWIZZLERS_2_B(B, A) SWIZZLER_2(A, B)
 #define GEN_SWIZZLERS_2_A(A) GEN_SWIZZLERS_2_B(0, A) GEN_SWIZZLERS_2_B(1, A) GEN_SWIZZLERS_2_B(2, A) GEN_SWIZZLERS_2_B(3, A)
 #define GEN_SWIZZLERS_2() GEN_SWIZZLERS_2_A(0) GEN_SWIZZLERS_2_A(1) GEN_SWIZZLERS_2_A(2) GEN_SWIZZLERS_2_A(3)
 
-#define SWIZZLER_1(a) Swizzler<1, Mapping<1> { a }> COMPONENT_##a;
+#define SWIZZLER_1(a) Swizzler<1, mapping_##a> COMPONENT_##a;
 #define GEN_SWIZZLERS_1_A(A) SWIZZLER_1(A)
 #define GEN_SWIZZLERS_1() GEN_SWIZZLERS_1_A(0) GEN_SWIZZLERS_1_A(1) GEN_SWIZZLERS_1_A(2) GEN_SWIZZLERS_1_A(3)
 
@@ -364,13 +395,6 @@ typedef union {
 } uvec2;
 #endif
 
-#ifdef __GNUC__
-#define MATH_FN_QUALIFIERS static inline __attribute__ ((const))
-#else
-#define MATH_FN_QUALIFIERS static inline
-#endif
-
-
 #define impl_op_ctor f
 #define impl_op_scale ((a.arr[i]) * scale)
 
@@ -384,7 +408,7 @@ typedef union {
 #define impl_op_neg(a) (-(a))
 
 #define impl_vec_op(size, snake_name, type_name, op_name, op, ...) \
-MATH_FN_QUALIFIERS type_name snake_name##_##op_name(__VA_ARGS__) { \
+NASL_FUNCTION type_name snake_name##_##op_name(__VA_ARGS__) { \
     type_name thing;                                               \
     for (int i = 0; i < size; i++)                                 \
       thing.arr[i] = impl_op_##op;                                 \
@@ -415,7 +439,7 @@ impl_vec_ops(4, uvec4, uvec4, unsigned)
 
 #ifdef NASL_ENABLE_WRAPPER_CLASSES
 template<unsigned len>
-float lengthSquared(vec_impl<float, len> vec) {
+NASL_FUNCTION float lengthSquared(vec_impl<float, len> vec) {
     float acc = 0.0f;
     for_range<0, len>([&]<auto i>(){
         acc += vec.arr[i] * vec.arr[i];
@@ -424,22 +448,22 @@ float lengthSquared(vec_impl<float, len> vec) {
 }
 
 template<unsigned len>
-float length(vec_impl<float, len> vec) {
+NASL_FUNCTION float length(vec_impl<float, len> vec) {
     return sqrtf(lengthSquared(vec));
 }
 
 template<unsigned len>
-vec_impl<float, len> normalize(vec_impl<float, len> vec) {
+NASL_FUNCTION vec_impl<float, len> normalize(vec_impl<float, len> vec) {
     return vec / length(vec);
 }
 
 template<typename T, unsigned len>
-auto dot(const vec_impl<T, len>& vec, const vec_impl<T, len>& other) {
+NASL_FUNCTION auto dot(const vec_impl<T, len>& vec, const vec_impl<T, len>& other) {
     return vec.dot(other);
 }
 
 template<typename T, unsigned len>
-auto cross(const vec_impl<T, len>& vec, const vec_impl<T, len>& other) {
+NASL_FUNCTION auto cross(const vec_impl<T, len>& vec, const vec_impl<T, len>& other) {
     return vec.cross(other);
 }
 #endif

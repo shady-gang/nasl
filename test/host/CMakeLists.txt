@@ -1,4 +1,4 @@
-add_executable(test_nasl_c test_vec.c)
+add_executable(test_nasl_c test_vec.c test_mat.c)
 target_link_libraries(test_nasl_c PRIVATE nasl)
 set_property(TARGET test_nasl_c PROPERTY C_STANDARD 11)
 add_test(NAME test_nasl_c COMMAND test_nasl_c)
