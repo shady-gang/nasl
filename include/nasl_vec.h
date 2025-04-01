@@ -458,6 +458,24 @@ NASL_FUNCTION vec_impl<float, len> normalize(vec_impl<float, len> vec) {
 }
 
 template<typename T, unsigned len>
+NASL_METHOD vec_impl<T, len> operator *(T scalar, const vec_impl<T, len>& other) {
+    vec_impl<T, len> result;
+    for_range<0, len>([&]<auto i>(){
+        result.arr[i] = scalar * other.arr[i];
+    });
+    return result;
+}
+
+template<typename T, unsigned len>
+NASL_METHOD vec_impl<T, len> operator -(const vec_impl<T, len>& other) {
+    vec_impl<T, len> result;
+    for_range<0, len>([&]<auto i>(){
+        result.arr[i] = -other.arr[i];
+    });
+    return result;
+}
+
+template<typename T, unsigned len>
 NASL_FUNCTION auto dot(const vec_impl<T, len>& vec, const vec_impl<T, len>& other) {
     return vec.dot(other);
 }

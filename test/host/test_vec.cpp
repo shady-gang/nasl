@@ -43,6 +43,23 @@ void check_vector_scalar_ctors() {
     vec2 w2 = 0.5f;
 }
 
+void check_vector_unop(vec3 a, float f) {
+    vec3 v1 = -a;
+}
+
+void check_vector_scalar_binop(vec3 a, float f) {
+    vec3 v1 = a * f;
+    vec3 v2 = f * a;
+    vec3 v3 = a / f;
+}
+
+void check_vector_elementwise_binop(vec3 a, vec3 b) {
+    vec3 v1 = a * b;
+    vec3 v2 = b * a;
+    vec3 v3 = a / b;
+    vec3 v4 = b / a;
+}
+
 void check_swizzle_const(const vec4& v4, const uvec4& u4, const ivec4& i4) {
     v4.x;
     v4.xy;
