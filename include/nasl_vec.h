@@ -70,7 +70,7 @@ struct Mapping {
 };
 
 template<int dst_len>
-NASL_METHOD static consteval bool fits(unsigned len, Mapping<dst_len> mapping) {
+NASL_METHOD static bool fits(unsigned len, Mapping<dst_len> mapping) {
     for (unsigned i = 0; i < dst_len; i++) {
         if (mapping.data[i] >= len)
             return false;
@@ -79,7 +79,7 @@ NASL_METHOD static consteval bool fits(unsigned len, Mapping<dst_len> mapping) {
 }
 
 template <auto B, auto E, typename F>
-NASL_METHOD constexpr void for_range(F f)
+NASL_METHOD void for_range(F f)
 {
     if constexpr (B < E)
     {
