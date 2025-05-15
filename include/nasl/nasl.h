@@ -9,11 +9,11 @@
 #elif __cplusplus
 #define NASL_FUNCTION static inline
 #define NASL_METHOD constexpr inline
-#define NASL_CONSTANT constexpr inline
+#define NASL_CONSTANT constexpr
 #else
 #define NASL_FUNCTION static inline
 #define NASL_METHOD inline
-#define NASL_CONSTANT const static inline
+#define NASL_CONSTANT const static
 #endif
 
 #include "nasl_vec.h"
