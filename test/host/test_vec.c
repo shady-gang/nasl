@@ -1,4 +1,4 @@
-#include "nasl.h"
+#include "nasl/nasl.h"
 
 #include <assert.h>
 
