@@ -338,35 +338,26 @@ typedef vec_impl<int, 2> ivec2;
 #else
 typedef union {
 #ifndef NASL_NO_NATIVE_VEC
-    native_vec4 native;
-#endif
-    float arr[4];
-    struct { float x, y, z, w; };
-} vec4;
-typedef union {
-    // native vec3 is padded to 4N
-    float arr[3];
-    struct { float x, y, z; };
-} vec3;
-typedef union {
-#ifndef NASL_NO_NATIVE_VEC
     native_vec2 native;
 #endif
     float arr[2];
     struct { float x, y; };
 } vec2;
 typedef union {
-#ifndef NASL_NO_NATIVE_VEC
-    native_ivec4 native;
-#endif
-    int arr[4];
-    struct { int x, y, z, w; };
-} ivec4;
+    // native vec3 is padded to 4N
+    float arr[3];
+    // aliasing with vec2 would bump our alignment requirements and also result in 4N size
+    struct { float x, y, z; };
+} vec3;
 typedef union {
-    // native ivec3 is padded to 4N
-    int arr[3];
-    struct { int x, y, z; };
-} ivec3;
+#ifndef NASL_NO_NATIVE_VEC
+    native_vec4 native;
+#endif
+    float arr[4];
+    vec3 xyz;
+    vec2 xy;
+    struct { float x, y, z, w; };
+} vec4;
 typedef union {
 #ifndef NASL_NO_NATIVE_VEC
     native_ivec2 native;
@@ -375,17 +366,19 @@ typedef union {
     struct { int x, y; };
 } ivec2;
 typedef union {
-#ifndef NASL_NO_NATIVE_VEC
-    native_uvec4 native;
-#endif
-    unsigned arr[4];
-    struct { unsigned x, y, z, w; };
-} uvec4;
+    // native ivec3 is padded to 4N
+    int arr[3];
+    struct { int x, y, z; };
+} ivec3;
 typedef union {
-    // native uvec3 is padded to 4N
-    unsigned arr[3];
-    struct { unsigned x, y, z; };
-} uvec3;
+#ifndef NASL_NO_NATIVE_VEC
+    native_ivec4 native;
+#endif
+    int arr[4];
+    ivec3 xyz;
+    ivec2 xy;
+    struct { int x, y, z, w; };
+} ivec4;
 typedef union {
 #ifndef NASL_NO_NATIVE_VEC
     native_uvec2 native;
@@ -393,6 +386,20 @@ typedef union {
     unsigned arr[2];
     struct { unsigned x, y; };
 } uvec2;
+typedef union {
+    // native uvec3 is padded to 4N
+    unsigned arr[3];
+    struct { unsigned x, y, z; };
+} uvec3;
+typedef union {
+#ifndef NASL_NO_NATIVE_VEC
+    native_uvec4 native;
+#endif
+    unsigned arr[4];
+    uvec3 xyz;
+    uvec2 xy;
+    struct { unsigned x, y, z, w; };
+} uvec4;
 #endif
 
 #define impl_op_ctor f
