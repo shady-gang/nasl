@@ -341,57 +341,57 @@ typedef union {
     native_vec4 native;
 #endif
     float arr[4];
-    float x, y, z, w;
+    struct { float x, y, z, w; };
 } vec4;
 typedef union {
     // native vec3 is padded to 4N
     float arr[3];
-    float x, y, z;
+    struct { float x, y, z; };
 } vec3;
 typedef union {
 #ifndef NASL_NO_NATIVE_VEC
     native_vec2 native;
 #endif
     float arr[2];
-    float x, y;
+    struct { float x, y; };
 } vec2;
 typedef union {
 #ifndef NASL_NO_NATIVE_VEC
     native_ivec4 native;
 #endif
     int arr[4];
-    int x, y, z, w;
+    struct { int x, y, z, w; };
 } ivec4;
 typedef union {
     // native ivec3 is padded to 4N
     int arr[3];
-    int x, y, z;
+    struct { int x, y, z; };
 } ivec3;
 typedef union {
 #ifndef NASL_NO_NATIVE_VEC
     native_ivec2 native;
 #endif
     int arr[2];
-    int x, y;
+    struct { int x, y; };
 } ivec2;
 typedef union {
 #ifndef NASL_NO_NATIVE_VEC
     native_uvec4 native;
 #endif
     unsigned arr[4];
-    unsigned x, y, z, w;
+    struct { unsigned x, y, z, w; };
 } uvec4;
 typedef union {
     // native uvec3 is padded to 4N
     unsigned arr[3];
-    unsigned x, y, z;
+    struct { unsigned x, y, z; };
 } uvec3;
 typedef union {
 #ifndef NASL_NO_NATIVE_VEC
     native_uvec2 native;
 #endif
     unsigned arr[2];
-    unsigned x, y;
+    struct { unsigned x, y; };
 } uvec2;
 #endif
 
