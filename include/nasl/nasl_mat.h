@@ -9,7 +9,7 @@ typedef union mat4_ mat4;
 
 NASL_FUNCTION mat4 transpose_mat4(mat4 src);
 NASL_FUNCTION mat4 mul_mat4(mat4 l, mat4 r);
-NASL_FUNCTION vec4 mul_mat4_vec4f(mat4 l, vec4 r);
+NASL_FUNCTION vec4 mul_mat4_vec4(mat4 l, vec4 r);
 
 union mat4_ {
     struct {
@@ -143,7 +143,7 @@ NASL_FUNCTION mat4 mul_mat4(mat4 l, mat4 r) {
 #undef genmul
 }
 
-NASL_FUNCTION vec4 mul_mat4_vec4f(mat4 l, vec4 r) {
+NASL_FUNCTION vec4 mul_mat4_vec4(mat4 l, vec4 r) {
     float src[4] = { r.x, r.y, r.z, r.w };
     float dst[4];
 #define a(i, j) elems.m##i##j
