@@ -61,8 +61,8 @@ void check_vector_elementwise_binop(vec3 a, vec3 b) {
 }
 
 void check_swizzle_const(const vec4& v4, const uvec4& u4, const ivec4& i4) {
-    v4.x;
-    v4.xy;
+    float r1 = v4.x;
+    vec2 r2 = v4.xy;
     v4.xyz;
     v4.xyzw;
 
