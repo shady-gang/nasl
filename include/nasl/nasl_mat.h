@@ -28,7 +28,7 @@ union mat4_ {
     }
 
     NASL_METHOD vec4 operator*(const vec4& other) {
-        return mul_mat4_vec4f(*this, other);
+        return mul_mat4_vec4(*this, other);
     }
 #endif
 };
